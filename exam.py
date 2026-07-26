@@ -101,7 +101,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 # Main Page ရဲ့ ထိပ်ဆုံးမှာ Logo ပြခြင်း (Sidebar ပိတ်ထားလည်း အမြဲပေါ်မည်)
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    st.image("pu_logo.jpg", width=150)
+    st.image("pu_logo.png", width=150)
 
 if not st.session_state.logged_in:
     st.title("🔐 Secure Online Examination System")
