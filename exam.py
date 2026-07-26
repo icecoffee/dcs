@@ -92,6 +92,16 @@ if "user_role" not in st.session_state: st.session_state.user_role = None
 if "username" not in st.session_state: st.session_state.username = None
 if "submitted" not in st.session_state: st.session_state.submitted = False
 
+# 1. Sidebar မှာ Logo ပေါ်စေရန် 
+with st.sidebar:
+    try:
+        st.image("Pu_logo.png", use_container_width=True)
+    except Exception:
+        try:
+            st.image("pu_logo.png", use_container_width=True)
+        except Exception:
+            pass
+    st.markdown("---")
 # Main Page Header Logo
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
