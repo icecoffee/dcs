@@ -96,7 +96,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     try:
-        st.image("pu_logo.jpg", width=150)
+        st.image("pu_logo.png", width=150)
     except:
         pass
 
