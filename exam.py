@@ -12,13 +12,17 @@ CSV_RESULTS_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tq
 CSV_QUESTIONS_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet2"
 CSV_USERS_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet3"
 
+# admin ရဲ့ Apps Script Web App URL
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyFMXmqgLQyIx-kUN54Q5oVV4q8T1WJEvoksyo_EugBLAYeZ9SUQt35BpQF8pWMOmbcQ/exec"
 
+# စာမေးပွဲဖြေဆိုချိန် မိနစ် ကန့်သတ်ချက် (မိနစ် 5)
 EXAM_DURATION_MINUTES = 5
 
+# မြန်မာစံတော်ချိန် (GMT +6:30) ကို ရယူသည့် စနစ်
 def get_mm_now():
     return datetime.utcnow() + timedelta(hours=6, minutes=30)
 
+# --- GLOBAL LIVE MEMORY POOL FOR ADMIN VIEW ---
 if "global_results_pool" not in st.session_state:
     st.session_state.global_results_pool = []
 
@@ -78,6 +82,7 @@ def save_result_to_sheet(username, score):
         st.session_state.global_results_pool.append(new_record)
         
     try:
+        # 💡 [STABLE BACK] - Google Sheet error မဖြစ်စေရန် ရမှတ်ကို pure integer အဖြစ်သာ ပြန်ပြောင်းပို့ခြင်း
         payload = json.dumps({"timestamp": timestamp, "username": username, "score": int(score)}).encode('utf-8')
         req = urllib.request.Request(WEB_APP_URL, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
         urllib.request.urlopen(req, timeout=3)
@@ -86,23 +91,26 @@ def save_result_to_sheet(username, score):
 
 # --- APP CONFIGURATION ---
 st.set_page_config(page_title="Secure Exam Terminal", page_icon="🔐", layout="centered")
+# 💡 LOGO 
+col1, col2, col3 = st.sidebar.columns([1,3,1]) # Logo ကို အလယ်မှာပြဖို့ columns သုံးခြင်း
+with col2:
+    try:
+        # width ပါရာမီတာဖြင့် Size ကို စိတ်ကြိုက်ချိန်နိုင်သည် (180 Size)
+        st.image("pu_logo.jpg", width=180, caption="Pyay University") 
+    except Exception:
+        # ပုံမရှိလျှင် Error မပြဘဲ ကျော်သွားရန်
+        pass
+st.sidebar.markdown("---") # မျဉ်းတားလေးတစ်ခုထည့်ခြင်း
 
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "user_role" not in st.session_state: st.session_state.user_role = None
 if "username" not in st.session_state: st.session_state.username = None
 if "submitted" not in st.session_state: st.session_state.submitted = False
 
-# Main Page Header Logo
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    try:
-        st.image("pu_logo.jpg", width=150)
-    except:
-        pass
-
+# --- UI LOGIC ---
 if not st.session_state.logged_in:
     st.title("🔐 Secure Online Examination System")
-    st.subheader("Department of Physics, Pyay University")
+    st.subheader("DCS Production Prototype (Dynamic Authentication Mode)")
     
     username = st.text_input("Username (Case-sensitive)")
     password = st.text_input("Password", type="password")
@@ -117,10 +125,18 @@ if not st.session_state.logged_in:
             valid_students = get_student_users_from_sheet()
             if username in valid_students and str(password).strip() == str(valid_students[username]).strip():
                 sheet_data = get_results_from_sheet()
-                submitted_users = [str(r[1]) for r in sheet_data if len(r) > 1]
-                submitted_users += [str(r[1]) for r in st.session_state.global_results_pool]
+                already_submitted = False
                 
-                if username in submitted_users:
+                for row in sheet_data:
+                    if len(row) > 1 and str(row[1]) == username:
+                        already_submitted = True
+                        break
+                for r in st.session_state.global_results_pool:
+                    if r[1] == username:
+                        already_submitted = True
+                        break
+                
+                if already_submitted:
                     st.error(f"❌ Access Denied: User '{username}' has already submitted the exam. Account Locked.")
                 else:
                     st.session_state.logged_in = True
@@ -160,6 +176,7 @@ else:
             
             for r in db_data:
                 if len(r) >= 3 and str(r[0]).lower() != "timestamp":
+                    # အပြင်မှာ ပြသတဲ့အခါမှ admin အလိုရှိတဲ့ "/စုစုပေါင်းမေးခွန်း" ပုံစံဖြင့် လှပအောင် တွဲပြပေးခြင်း
                     display_data.append({"Timestamp": r[0], "Student Username": r[1], "Score Obtained": f"{r[2]} Points"})
             
             for r in st.session_state.global_results_pool:
@@ -211,6 +228,8 @@ else:
                     st.sidebar.error(timer_text)
                 else:
                     st.sidebar.warning(timer_text)
+                    
+                st.fragment(run_every=1.0)(lambda: None)()
             
             # --- QUESTIONS UI ---
             if all_questions:
@@ -238,3 +257,4 @@ else:
             disp_score = st.session_state.final_score if 'final_score' in st.session_state else 0
             st.success(f"🎉 သင်၏ ရမှတ်မှာ {disp_score}/{len(all_questions)} ဖြစ်ပြီး စနစ်မှ သိမ်းဆည်းကာ Lock ချထားပြီး ဖြစ်ပါသည်။")
             st.balloons()
+                
