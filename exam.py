@@ -49,11 +49,7 @@ def get_questions_from_sheet():
     return []  # Built-in မေးခွန်းများ ဖြုတ်ပြီး အလွတ်စာရင်းသာ ပြန်ထားရန်
 
 def get_student_users_from_sheet():
-    base_users = {
-        "student": "student123",
-        "Roll1": "12345",
-        "Roll2": "12345"
-    }
+    base_users = {}  
     try:
         df = pd.read_csv(CSV_USERS_URL)
         if df is not None and not df.empty:
@@ -67,7 +63,7 @@ def get_student_users_from_sheet():
     except:
         pass
     return base_users
-
+    
 def save_result_to_sheet(username, score):
     timestamp = get_mm_now().strftime("%Y-%m-%d %H:%M:%S")
     new_record = [timestamp, username, score]
