@@ -94,14 +94,14 @@ with col2:
     except:
         pass
 
-if not st.session_state.logged_in:
+   if not st.session_state.logged_in:
     st.title("🔐 Secure Online Examination System")
     st.subheader("Department of Physics, Pyay University")
     
     username = st.text_input("Username (Case-sensitive)")
     password = st.text_input("Password", type="password")
     
-   if st.button("Secure Login", type="primary"):
+        if st.button("Secure Login", type="primary"):
         entered_user = username.strip()
         entered_pass = str(password).strip()
 
