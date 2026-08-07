@@ -188,62 +188,49 @@ else:
             st.subheader("Inject New Question to Pool Permanently")
             st.info("💡 ဤနေရာတွင် မေးခွန်းအသစ်များကို Google Sheet (Sheet2) ထဲသို့ တိုက်ရိုက်သွားရောက်တိုးပေးရပါမည်။")
                 
-    elif st.session_state.user_role == "student":
+   elif st.session_state.user_role == "student":
         st.title("✍️ Student Examination Terminal")
         st.write(f"Active Session User: **{st.session_state.username}**")
-        
         all_questions = get_questions_from_sheet()
         
         if not st.session_state.submitted:
             if "start_time" in st.session_state:
+                timer_placeholder = st.empty()
                 end_time = st.session_state.start_time + timedelta(minutes=EXAM_DURATION_MINUTES)
-                now = get_mm_now()
-                remaining = end_time - now
+                remaining = end_time - get_mm_now()
                 seconds_left = int(remaining.total_seconds())
                 
                 if seconds_left <= 0:
-                    st.error("⏳ အချိန်ပြည့်သွားပါပြီ။ သင်ရွေးချယ်ထားသမျှ အဖြေများကို စနစ်မှ အလိုအလျောက် သိမ်းဆည်းနေပါသည်...")
+                    st.error("⏳ အချိန်ပြည့်သွားပါပြီ။ စနစ်မှ အလိုအလျောက် သိမ်းဆည်းနေပါသည်...")
                     time.sleep(1)
-                    auto_score = 0
-                    for i, q in enumerate(all_questions):
-                        radio_key = f"q_{i}"
-                        if radio_key in st.session_state and st.session_state[radio_key] == q['correct']:
-                            auto_score += 1
+                    auto_score = sum(1 for i, q in enumerate(all_questions) if st.session_state.get(f"q_{i}") == q['correct'])
                     save_result_to_sheet(st.session_state.username, auto_score)
                     st.session_state.submitted = True
                     st.session_state.final_score = auto_score
                     st.rerun()
                 
                 mins, secs = divmod(seconds_left, 60)
-                timer_text = f"⏳ ကျန်ရှိချိန် - {mins:02d}:{secs:02d}"
-                
                 if seconds_left < 60:
-                    st.sidebar.error(timer_text)
+                    timer_placeholder.error(f"⏳ ကျန်ရှိချိန် - {mins:02d}:{secs:02d}")
                 else:
-                    st.sidebar.warning(timer_text)
+                    timer_placeholder.warning(f"⏳ ကျန်ရှိချိန် - {mins:02d}:{secs:02d}")
             
             if all_questions:
-                score = 0
                 user_answers = {}
-                
                 for i, q in enumerate(all_questions):
                     st.markdown(f"##### Q{i+1}: {q['q']}")
                     user_answers[i] = st.radio(f"Select answer for Q{i+1}:", q['options'], index=None, key=f"q_{i}")
                     st.write("---")
                     
                 if st.button("Final Submit & Lock Account", type="primary"):
-                    for i, q in enumerate(all_questions):
-                        if i in user_answers and user_answers[i] is not None:
-                            if str(user_answers[i]) == str(q['correct']):
-                                score += 1
-                    
+                    score = sum(1 for i, q in enumerate(all_questions) if i in user_answers and user_answers[i] == q['correct'])
                     save_result_to_sheet(st.session_state.username, score)
                     st.session_state.submitted = True
                     st.session_state.final_score = score
                     st.rerun()
             else:
-                st.warning("⚠️ မေးခွန်းများ Google Sheet ထဲတွင် မတွေ့ရှိရသေးပါ။ ကျေးဇူးပြု၍ Sheet2 ကို စစ်ဆေးပါ။")
+                st.warning("⚠️ မေးခွန်းများ Google Sheet ထဲတွင် မတွေ့ရှိရသေးပါ။")
         else:
-            disp_score = st.session_state.final_score if 'final_score' in st.session_state else 0
+            disp_score = st.session_state.get('final_score', 0)
             st.success(f"🎉 သင်၏ ရမှတ်မှာ {disp_score}/{len(all_questions)} ဖြစ်ပြီး စနစ်မှ သိမ်းဆည်းကာ Lock ချထားပြီး ဖြစ်ပါသည်။")
             st.balloons()
