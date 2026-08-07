@@ -81,7 +81,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 
 with st.sidebar:
     try:
-        st.image("Pu_logo.png", use_container_width=True)
+        st.image("pu_logo.png", use_container_width=True)
     except:
         pass
     st.markdown("<h4 style='text-align: center;'>Pyay University</h4>", unsafe_allow_html=True)
