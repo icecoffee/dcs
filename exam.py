@@ -123,8 +123,8 @@ if not st.session_state.logged_in:
     password = st.text_input("Password", type="password")
     
     if st.button("Secure Login", type="primary"):
-# 👇 Admin ကို Sheet3 ကနေ လှမ်းစစ်မယ့် ကုဒ်အသစ်
-        admin_verified = False
+        # 1. Sheet3 ထဲက Data တွေကို အစအဆုံး ဆွဲထုတ်မည်
+        all_users = {}
         try:
             df_users = pd.read_csv(CSV_USERS_URL)
             if df_users is not None and not df_users.empty:
@@ -134,35 +134,40 @@ if not st.session_state.logged_in:
                 
                 for _, row in df_users.iterrows():
                     if pd.notna(row[u_col]) and pd.notna(row[p_col]):
-                        if str(row[u_col]).strip().lower() == "admin" and str(row[p_col]).strip() == str(password).strip() and username.lower() == "admin":
-                            admin_verified = True
-                            break
-        except:
+                        uname = str(row[u_col]).strip()
+                        pword = str(row[p_col]).strip()
+                        all_users[uname] = pword
+        except Exception as e:
             pass
 
-        if admin_verified:
-            st.session_state.logged_in = True
-            st.session_state.user_role = "admin"
-            st.session_state.username = "admin"
-            st.rerun()
-        else:
-            valid_students = get_student_users_from_sheet()
-            if username in valid_students and str(password).strip() == str(valid_students[username]).strip():
+        # 2. ရိုက်ထည့်လိုက်တဲ့ Username နဲ့ Password ကို စစ်ဆေးခြင်း
+        entered_user = username.strip()
+        entered_pass = str(password).strip()
+
+        if entered_user in all_users and entered_pass == all_users[entered_user]:
+            # Admin ဟုတ်မဟုတ် စစ်ဆေးခြင်း
+            if entered_user.lower() == "admin":
+                st.session_state.logged_in = True
+                st.session_state.user_role = "admin"
+                st.session_state.username = "admin"
+                st.rerun()
+            else:
+                # ကျောင်းသားဖြစ်ပါက ဖြေပြီးသားလား စစ်မည်
                 sheet_data = get_results_from_sheet()
                 submitted_users = [str(r[1]) for r in sheet_data if len(r) > 1]
                 submitted_users += [str(r[1]) for r in st.session_state.global_results_pool]
                 
-                if username in submitted_users:
-                    st.error(f"❌ Access Denied: User '{username}' has already submitted the exam. Account Locked.")
+                if entered_user in submitted_users:
+                    st.error(f"❌ Access Denied: User '{entered_user}' has already submitted the exam. Account Locked.")
                 else:
                     st.session_state.logged_in = True
                     st.session_state.user_role = "student"
-                    st.session_state.username = username
+                    st.session_state.username = entered_user
                     st.session_state.submitted = False
                     st.session_state.start_time = get_mm_now()
                     st.rerun()
-            else:
-                st.error("Invalid credentials. Please try again.")
+        else:
+            st.error("Invalid credentials. Please try again.")
 else:
     if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
