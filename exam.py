@@ -45,25 +45,8 @@ def get_questions_from_sheet():
                 return sheet_questions
     except:
         pass
-        
-    return []  # Built-in မေးခွန်းများ ဖြုတ်ပြီး အလွတ်စာရင်းသာ ပြန်ထားရန်
+    return []
 
-def get_student_users_from_sheet():
-    base_users = {}  
-    try:
-        df = pd.read_csv(CSV_USERS_URL)
-        if df is not None and not df.empty:
-            df.columns = df.columns.str.strip()
-            user_col = [c for c in df.columns if 'user' in c.lower()][0]
-            pwd_col = [c for c in df.columns if 'pass' in c.lower()][0]
-            
-            for _, row in df.iterrows():
-                if pd.notna(row[user_col]) and pd.notna(row[pwd_col]):
-                    base_users[str(row[user_col]).strip()] = str(row[pwd_col]).strip()
-    except:
-        pass
-    return base_users
-    
 def save_result_to_sheet(username, score):
     timestamp = get_mm_now().strftime("%Y-%m-%d %H:%M:%S")
     new_record = [timestamp, username, score]
@@ -79,11 +62,10 @@ def save_result_to_sheet(username, score):
 
 # --- APP CONFIGURATION ---
 st.set_page_config(page_title="Secure Exam Terminal", page_icon="🔐", layout="centered")
-# Input Box အရွယ်အစားကို အနေတော် (ဥပမာ- Width 350px) ဖြစ်စေရန် CSS ထည့်ခြင်း
+
 st.markdown(
     """
     <style>
-    /* Username နဲ့ Password Input box များကို Width သတ်မှတ်ရန် */
     div[data-testid="stTextInput"] {
         max-width: 350px;
     }
@@ -91,23 +73,20 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "user_role" not in st.session_state: st.session_state.user_role = None
 if "username" not in st.session_state: st.session_state.username = None
 if "submitted" not in st.session_state: st.session_state.submitted = False
 
-# 1. Sidebar မှာ Logo ပေါ်စေရန် 
 with st.sidebar:
     try:
         st.image("Pu_logo.png", use_container_width=True)
-    except Exception:
-        try:
-            st.image("pu_logo.png", use_container_width=True)
-        except Exception:
-            pass
+    except:
+        pass
     st.markdown("<h4 style='text-align: center;'>Pyay University</h4>", unsafe_allow_html=True)
     st.markdown("---")
-# Main Page Header Logo
+
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     try:
@@ -123,7 +102,7 @@ if not st.session_state.logged_in:
     password = st.text_input("Password", type="password")
     
     if st.button("Secure Login", type="primary"):
-        # 1. Sheet3 ထဲက Data တွေကို အစအဆုံး ဆွဲထုတ်မည်
+        # Sheet3 ထဲမှ User အားလုံးကို ဖတ်ယူခြင်း
         all_users = {}
         try:
             df_users = pd.read_csv(CSV_USERS_URL)
@@ -140,19 +119,17 @@ if not st.session_state.logged_in:
         except Exception as e:
             pass
 
-        # 2. ရိုက်ထည့်လိုက်တဲ့ Username နဲ့ Password ကို စစ်ဆေးခြင်း
         entered_user = username.strip()
         entered_pass = str(password).strip()
 
+        # Login စစ်ဆေးခြင်း
         if entered_user in all_users and entered_pass == all_users[entered_user]:
-            # Admin ဟုတ်မဟုတ် စစ်ဆေးခြင်း
             if entered_user.lower() == "admin":
                 st.session_state.logged_in = True
                 st.session_state.user_role = "admin"
                 st.session_state.username = "admin"
                 st.rerun()
             else:
-                # ကျောင်းသားဖြစ်ပါက ဖြေပြီးသားလား စစ်မည်
                 sheet_data = get_results_from_sheet()
                 submitted_users = [str(r[1]) for r in sheet_data if len(r) > 1]
                 submitted_users += [str(r[1]) for r in st.session_state.global_results_pool]
@@ -177,7 +154,6 @@ else:
         if "start_time" in st.session_state: del st.session_state.start_time
         st.rerun()
         
-    # --- ADMIN PANEL ---
     if st.session_state.user_role == "admin":
         st.title("👩‍🏫 Admin Control Panel (Secure Mode)")
         
@@ -212,8 +188,7 @@ else:
         with tab2:
             st.subheader("Inject New Question to Pool Permanently")
             st.info("💡 ဤနေရာတွင် မေးခွန်းအသစ်များကို Google Sheet (Sheet2) ထဲသို့ တိုက်ရိုက်သွားရောက်တိုးပေးရပါမည်။")
-                    
-    # --- STUDENT PANEL ---
+                
     elif st.session_state.user_role == "student":
         st.title("✍️ Student Examination Terminal")
         st.write(f"Active Session User: **{st.session_state.username}**")
@@ -221,7 +196,6 @@ else:
         all_questions = get_questions_from_sheet()
         
         if not st.session_state.submitted:
-            # --- TIMER LOGIC ---
             if "start_time" in st.session_state:
                 end_time = st.session_state.start_time + timedelta(minutes=EXAM_DURATION_MINUTES)
                 now = get_mm_now()
@@ -249,7 +223,6 @@ else:
                 else:
                     st.sidebar.warning(timer_text)
             
-            # --- QUESTIONS UI ---
             if all_questions:
                 score = 0
                 user_answers = {}
@@ -270,7 +243,7 @@ else:
                     st.session_state.final_score = score
                     st.rerun()
             else:
-                st.warning("⚠️ မေးခွန်းများ Cloud တွင်းမှ ဆွဲယူနေဆဲ ဖြစ်ပါသည်။ ခေတ္တစောင့်ဆိုင်းပေးပါရန်။")
+                st.warning("⚠️ မေးခွန်းများ Google Sheet ထဲတွင် မတွေ့ရှိရသေးပါ။ ကျေးဇူးပြု၍ Sheet2 ကို စစ်ဆေးပါ။")
         else:
             disp_score = st.session_state.final_score if 'final_score' in st.session_state else 0
             st.success(f"🎉 သင်၏ ရမှတ်မှာ {disp_score}/{len(all_questions)} ဖြစ်ပြီး စနစ်မှ သိမ်းဆည်းကာ Lock ချထားပြီး ဖြစ်ပါသည်။")
