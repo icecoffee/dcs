@@ -65,7 +65,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 
 with st.sidebar:
     try:
-        st.image("pu_logo.png", use_container_width=True)
+        st.image("Pu_logo.png", use_container_width=True)
     except:
         pass
     st.markdown("<h4 style='text-align: center;'>Pyay University</h4>", unsafe_allow_html=True)
@@ -78,13 +78,6 @@ with st.sidebar:
             st.session_state.submitted = False
             if "start_time" in st.session_state: del st.session_state.start_time
             st.rerun()
-
-col1, col2, col3 = st.columns([1, 2, 1])
-with col2:
-    try:
-        st.image("pu_logo.png", width=150)
-    except:
-        pass
 
 if not st.session_state.logged_in:
     st.title("🔐 Secure Online Examination System")
@@ -168,7 +161,6 @@ else:
         
         if not st.session_state.submitted:
             if "start_time" in st.session_state:
-                timer_placeholder = st.empty()
                 end_time = st.session_state.start_time + timedelta(minutes=EXAM_DURATION_MINUTES)
                 remaining = end_time - get_mm_now()
                 seconds_left = int(remaining.total_seconds())
@@ -183,16 +175,17 @@ else:
                     st.rerun()
                 
                 mins, secs = divmod(seconds_left, 60)
+                timer_text = f"⏳ ကျန်ရှိချိန် - {mins:02d}:{secs:02d}"
                 if seconds_left < 60:
-                    timer_placeholder.error(f"⏳ ကျန်ရှိချိန် - {mins:02d}:{secs:02d}")
+                    st.error(timer_text)
                 else:
-                    timer_placeholder.warning(f"⏳ ကျန်ရှိချိန် - {mins:02d}:{secs:02d}")
+                    st.warning(timer_text)
             
             if all_questions:
                 user_answers = {}
                 for i, q in enumerate(all_questions):
                     st.markdown(f"##### Q{i+1}: {q['q']}")
-                    user_answers[i] = st.radio(f"Select answer for Q{i+1}:", q['options'], index=None, key=f"q_{i}")
+                    user_answers[i] = st.radio(f"Select answer for Q{i+1}:", q['options'], index=None, key=f"q_{i}", label_visibility="collapsed")
                     st.write("---")
                     
                 if st.button("Final Submit & Lock Account", type="primary"):
