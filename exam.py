@@ -105,39 +105,30 @@ if not st.session_state.logged_in:
         entered_user = username.strip()
         entered_pass = str(password).strip()
 
-        # 1. Google Sheet (Sheet3) မှ User များကို ဖတ်ယူခြင်း
+        # Google Sheet (Sheet3) မှ User အားလုံးကို Header မပါဘဲ တိုက်ရိုက်ဖတ်ယူခြင်း
         all_users = {}
         try:
-            df_users = pd.read_csv(CSV_USERS_URL)
+            # header=None ထည့်လိုက်ခြင်းဖြင့် ပထမဆုံး row ကို header လို့ မသတ်မှတ်တော့ဘဲ ဒေတာအဖြစ် အကုန်ဖတ်မည်
+            df_users = pd.read_csv(CSV_USERS_URL, header=None)
             if df_users is not None and not df_users.empty:
-                df_users.columns = df_users.columns.str.strip()
                 for _, row in df_users.iterrows():
                     if len(row) >= 2 and pd.notna(row.iloc[0]) and pd.notna(row.iloc[1]):
                         u_val = str(row.iloc[0]).strip()
                         p_val = str(row.iloc[1]).strip()
-                        all_users[u_val] = p_val
+                        # 'Username' ဆိုတဲ့ ခေါင်းစဉ်ပါလာလျှင် ကျော်ရန်
+                        if u_val.lower() != "username":
+                            all_users[u_val] = p_val
         except Exception as e:
             pass
 
-        # 2. Admin ဟုတ်မဟုတ် Sheet3 ထဲက data ဖြင့် စစ်ဆေးခြင်း
-        is_admin = False
-        if entered_user.lower() == "admin":
-            if entered_user in all_users and entered_pass == all_users[entered_user]:
-                is_admin = True
-            elif "admin" in [k.lower() for k in all_users.keys()]:
-                for k, v in all_users.items():
-                    if k.lower() == "admin" and entered_pass == v:
-                        is_admin = True
-                        break
-
-        if is_admin:
-            st.session_state.logged_in = True
-            st.session_state.user_role = "admin"
-            st.session_state.username = "admin"
-            st.rerun()
-        else:
-            # 3. ကျောင်းသား အကောင့်များ စစ်ဆေးခြင်း
-            if entered_user in all_users and entered_pass == all_users[entered_user]:
+        # Login စစ်ဆေးခြင်း
+        if entered_user in all_users and entered_pass == all_users[entered_user]:
+            if entered_user.lower() == "admin":
+                st.session_state.logged_in = True
+                st.session_state.user_role = "admin"
+                st.session_state.username = "admin"
+                st.rerun()
+            else:
                 sheet_data = get_results_from_sheet()
                 submitted_users = [str(r[1]) for r in sheet_data if len(r) > 1]
                 submitted_users += [str(r[1]) for r in st.session_state.global_results_pool]
@@ -151,8 +142,8 @@ if not st.session_state.logged_in:
                     st.session_state.submitted = False
                     st.session_state.start_time = get_mm_now()
                     st.rerun()
-            else:
-                st.error("Invalid credentials. Please try again.")
+        else:
+            st.error("Invalid credentials. Please try again.")
 else:
     if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
