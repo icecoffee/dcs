@@ -123,7 +123,24 @@ if not st.session_state.logged_in:
     password = st.text_input("Password", type="password")
     
     if st.button("Secure Login", type="primary"):
-        if username == "admin" and password == "admin123":
+# 👇 Admin ကို Sheet3 ကနေ လှမ်းစစ်မယ့် ကုဒ်အသစ်
+        admin_verified = False
+        try:
+            df_users = pd.read_csv(CSV_USERS_URL)
+            if df_users is not None and not df_users.empty:
+                df_users.columns = df_users.columns.str.strip()
+                u_col = [c for c in df_users.columns if 'user' in c.lower()][0]
+                p_col = [c for c in df_users.columns if 'pass' in c.lower()][0]
+                
+                for _, row in df_users.iterrows():
+                    if pd.notna(row[u_col]) and pd.notna(row[p_col]):
+                        if str(row[u_col]).strip().lower() == "admin" and str(row[p_col]).strip() == str(password).strip() and username.lower() == "admin":
+                            admin_verified = True
+                            break
+        except:
+            pass
+
+        if admin_verified:
             st.session_state.logged_in = True
             st.session_state.user_role = "admin"
             st.session_state.username = "admin"
