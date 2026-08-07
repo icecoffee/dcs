@@ -94,14 +94,7 @@ with col2:
     except:
         pass
 
-   if not st.session_state.logged_in:
-    st.title("🔐 Secure Online Examination System")
-    st.subheader("Department of Physics, Pyay University")
-    
-    username = st.text_input("Username (Case-sensitive)")
-    password = st.text_input("Password", type="password")
-    
-    if not st.session_state.logged_in:
+if not st.session_state.logged_in:
     st.title("🔐 Secure Online Examination System")
     st.subheader("Department of Physics, Pyay University")
     
@@ -160,14 +153,6 @@ with col2:
                     st.rerun()
             else:
                 st.error("Invalid credentials. Please try again.")
-else:
-    if st.sidebar.button("Log Out"):
-        st.session_state.logged_in = False
-        st.session_state.user_role = None
-        st.session_state.username = None
-        st.session_state.submitted = False
-        if "start_time" in st.session_state: del st.session_state.start_time
-        st.rerun()    
 else:
     if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
