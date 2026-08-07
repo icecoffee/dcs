@@ -101,7 +101,14 @@ with col2:
     username = st.text_input("Username (Case-sensitive)")
     password = st.text_input("Password", type="password")
     
-        if st.button("Secure Login", type="primary"):
+    if not st.session_state.logged_in:
+    st.title("🔐 Secure Online Examination System")
+    st.subheader("Department of Physics, Pyay University")
+    
+    username = st.text_input("Username (Case-sensitive)")
+    password = st.text_input("Password", type="password")
+    
+    if st.button("Secure Login", type="primary"):
         entered_user = username.strip()
         entered_pass = str(password).strip()
 
@@ -111,7 +118,6 @@ with col2:
             df_users = pd.read_csv(CSV_USERS_URL)
             if df_users is not None and not df_users.empty:
                 df_users.columns = df_users.columns.str.strip()
-                # ပထမဆုံး Column ကို Username အဖြစ်၊ ဒုတိယ Column ကို Password အဖြစ် ယူမည်
                 for _, row in df_users.iterrows():
                     if len(row) >= 2 and pd.notna(row.iloc[0]) and pd.notna(row.iloc[1]):
                         u_val = str(row.iloc[0]).strip()
@@ -123,7 +129,6 @@ with col2:
         # 2. Admin ဟုတ်မဟုတ် Sheet3 ထဲက data ဖြင့် စစ်ဆေးခြင်း
         is_admin = False
         if entered_user.lower() == "admin":
-            # Sheet3 ထဲမှာ admin ဆိုတဲ့ key ရှိမရှိ သို့မဟုတ် ပထမဆုံး row က admin ဖြစ်နေခြင်းကို စစ်မည်
             if entered_user in all_users and entered_pass == all_users[entered_user]:
                 is_admin = True
             elif "admin" in [k.lower() for k in all_users.keys()]:
@@ -155,6 +160,14 @@ with col2:
                     st.rerun()
             else:
                 st.error("Invalid credentials. Please try again.")
+else:
+    if st.sidebar.button("Log Out"):
+        st.session_state.logged_in = False
+        st.session_state.user_role = None
+        st.session_state.username = None
+        st.session_state.submitted = False
+        if "start_time" in st.session_state: del st.session_state.start_time
+        st.rerun()    
 else:
     if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
