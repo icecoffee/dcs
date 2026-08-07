@@ -5,13 +5,10 @@ import urllib.request
 import json
 import time
 
-# --- GOOGLE SHEET DATABASE CONNECTIVITY ---
 SHEET_ID = "1ytBPXMKDwY2CY1hkEBxL6bCVwgr-GkmhzDFpvSVTIkA"
-
 CSV_RESULTS_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1"
 CSV_QUESTIONS_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet2"
 CSV_USERS_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet3"
-
 WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyFMXmqgLQyIx-kUN54Q5oVV4q8T1WJEvoksyo_EugBLAYeZ9SUQt35BpQF8pWMOmbcQ/exec"
 
 EXAM_DURATION_MINUTES = 5
@@ -52,7 +49,6 @@ def save_result_to_sheet(username, score):
     new_record = [timestamp, username, score]
     if new_record not in st.session_state.global_results_pool:
         st.session_state.global_results_pool.append(new_record)
-        
     try:
         payload = json.dumps({"timestamp": timestamp, "username": username, "score": int(score)}).encode('utf-8')
         req = urllib.request.Request(WEB_APP_URL, data=payload, headers={'Content-Type': 'application/json'}, method='POST')
@@ -60,19 +56,7 @@ def save_result_to_sheet(username, score):
     except:
         pass
 
-# --- APP CONFIGURATION ---
 st.set_page_config(page_title="Secure Exam Terminal", page_icon="🔐", layout="centered")
-
-st.markdown(
-    """
-    <style>
-    div[data-testid="stTextInput"] {
-        max-width: 350px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "user_role" not in st.session_state: st.session_state.user_role = None
@@ -81,11 +65,19 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 
 with st.sidebar:
     try:
-        st.image("pu_logo.png", use_container_width=True)
+        st.image("Pu_logo.png", use_container_width=True)
     except:
         pass
     st.markdown("<h4 style='text-align: center;'>Pyay University</h4>", unsafe_allow_html=True)
     st.markdown("---")
+    if st.session_state.logged_in:
+        if st.button("Log Out"):
+            st.session_state.logged_in = False
+            st.session_state.user_role = None
+            st.session_state.username = None
+            st.session_state.submitted = False
+            if "start_time" in st.session_state: del st.session_state.start_time
+            st.rerun()
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
@@ -105,23 +97,19 @@ if not st.session_state.logged_in:
         entered_user = username.strip()
         entered_pass = str(password).strip()
 
-        # Google Sheet (Sheet3) မှ User အားလုံးကို Header မပါဘဲ တိုက်ရိုက်ဖတ်ယူခြင်း
         all_users = {}
         try:
-            # header=None ထည့်လိုက်ခြင်းဖြင့် ပထမဆုံး row ကို header လို့ မသတ်မှတ်တော့ဘဲ ဒေတာအဖြစ် အကုန်ဖတ်မည်
             df_users = pd.read_csv(CSV_USERS_URL, header=None)
             if df_users is not None and not df_users.empty:
                 for _, row in df_users.iterrows():
                     if len(row) >= 2 and pd.notna(row.iloc[0]) and pd.notna(row.iloc[1]):
                         u_val = str(row.iloc[0]).strip()
                         p_val = str(row.iloc[1]).strip()
-                        # 'Username' ဆိုတဲ့ ခေါင်းစဉ်ပါလာလျှင် ကျော်ရန်
                         if u_val.lower() != "username":
                             all_users[u_val] = p_val
-        except Exception as e:
+        except:
             pass
 
-        # Login စစ်ဆေးခြင်း
         if entered_user in all_users and entered_pass == all_users[entered_user]:
             if entered_user.lower() == "admin":
                 st.session_state.logged_in = True
@@ -145,18 +133,8 @@ if not st.session_state.logged_in:
         else:
             st.error("Invalid credentials. Please try again.")
 else:
-    if st.sidebar.button("Log Out"):
-        st.session_state.logged_in = False
-        st.session_state.user_role = None
-        st.session_state.username = None
-        st.session_state.submitted = False
-        if "start_time" in st.session_state: del st.session_state.start_time
-        st.rerun()
-        
     if st.session_state.user_role == "admin":
         st.title("👩‍🏫 Admin Control Panel (Secure Mode)")
-        
-        st.sidebar.subheader("⚙️ System Control")
         if st.sidebar.button("♻️ Force Reboot System", type="secondary"):
             st.session_state.global_results_pool = []
             st.sidebar.success("Memory Pool Cleared Successfully!")
@@ -164,31 +142,26 @@ else:
             st.rerun()
         
         tab1, tab2 = st.tabs(["📝 View Results Logs", "➕ Add Secure Questions"])
-        
         with tab1:
             st.subheader("🔒 Terminal Live Records")
             db_data = get_results_from_sheet()
             display_data = []
-            
             for r in db_data:
                 if len(r) >= 3 and str(r[0]).lower() != "timestamp":
                     display_data.append({"Timestamp": r[0], "Student Username": r[1], "Score Obtained": f"{r[2]} Points"})
-            
             for r in st.session_state.global_results_pool:
                 row_dict = {"Timestamp": r[0], "Student Username": r[1], "Score Obtained": f"{r[2]} Points"}
                 if row_dict not in display_data:
                     display_data.append(row_dict)
-            
             if display_data:
                 st.table(display_data)
             else:
                 st.info("💡 ဖြေဆိုထားသော ကျောင်းသား မှတ်တမ်း မရှိသေးပါ။")
-                
         with tab2:
             st.subheader("Inject New Question to Pool Permanently")
             st.info("💡 ဤနေရာတွင် မေးခွန်းအသစ်များကို Google Sheet (Sheet2) ထဲသို့ တိုက်ရိုက်သွားရောက်တိုးပေးရပါမည်။")
                 
-   elif st.session_state.user_role == "student":
+    elif st.session_state.user_role == "student":
         st.title("✍️ Student Examination Terminal")
         st.write(f"Active Session User: **{st.session_state.username}**")
         all_questions = get_questions_from_sheet()
