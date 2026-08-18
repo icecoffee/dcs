@@ -263,10 +263,6 @@ else:
                     st.sidebar.error(timer_text)
                 else:
                     st.sidebar.warning(timer_text)
-                 # (Student Role ဖြစ်မှ) နာရီသွားစေရန်
-                if st.session_state.get("user_role") == "student" and not st.session_state.submitted:
-                    time.sleep(1)
-                    st.rerun()
             
             if all_questions:
                 score = 0
