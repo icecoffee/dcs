@@ -263,6 +263,8 @@ else:
                     st.sidebar.error(timer_text)
                 else:
                     st.sidebar.warning(timer_text)
+                time.sleep(1)
+                st.rerun()
             
             if all_questions:
                 score = 0
