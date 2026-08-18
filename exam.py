@@ -263,6 +263,9 @@ else:
                     st.sidebar.error(timer_text)
                 else:
                     st.sidebar.warning(timer_text)
+                if st.session_state.logged_in and st.session_state.user_role == "student":
+                    time.sleep(1)
+                    st.rerun()
             
             if all_questions:
                 score = 0
