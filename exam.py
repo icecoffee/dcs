@@ -95,8 +95,8 @@ with col2:
         pass
 
 if not st.session_state.logged_in:
-    st.title("🔐 Secure Online Examination System")
-    st.subheader("Department of Physics, Pyay University")
+    st.title("🔐 Pyay University Online Examination Portal")
+    st.subheader("Center for Human Resource Development")
     
     username = st.text_input("Username (Case-sensitive)")
     password = st.text_input("Password", type="password")
@@ -154,7 +154,7 @@ else:
         st.rerun()
         
     if st.session_state.user_role == "admin":
-        st.title("👩‍🏫 Admin Control Panel (Secure Mode)")
+        st.title("👩‍🏫 Administrative Control Panel: Question Bank & Result Management")
         
         st.sidebar.subheader("⚙️ System Control")
         if st.sidebar.button("♻️ Force Reboot System", type="secondary"):
